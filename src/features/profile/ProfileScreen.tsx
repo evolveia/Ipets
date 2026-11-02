@@ -16,8 +16,18 @@ import {
   Camera,
   Edit2,
   Check,
-  X
+  X,
+  MessageCircle,
+  FileText,
+  Headphones,
+  Bot,
+  ShieldAlert
 } from 'lucide-react';
+import { FaqModal } from './FaqModal';
+import { SupportChatModal } from './SupportChatModal';
+import { NotificationsModal } from './NotificationsModal';
+import { TermsModal } from './TermsModal';
+import { PrivacyModal } from './PrivacyModal';
 
 interface ProfileScreenProps {
   user: UserProfile;
@@ -27,6 +37,7 @@ interface ProfileScreenProps {
   onGoToLanding: () => void;
   onSignOut: () => void;
   onUpdateUser?: (updated: UserProfile) => void;
+  onShowToast?: (msg: string) => void;
 }
 
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({
@@ -37,12 +48,20 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   onGoToLanding,
   onSignOut,
   onUpdateUser,
+  onShowToast = () => {},
 }) => {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isFaqOpen, setIsFaqOpen] = useState(false);
+  const [isSupportChatOpen, setIsSupportChatOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+
   const tutorAvatarInputRef = useRef<HTMLInputElement>(null);
 
   // Edit form states
   const [editName, setEditName] = useState(user.name);
+
   const [editEmail, setEditEmail] = useState(user.email);
   const [editPhone, setEditPhone] = useState(user.phone);
   const [editStreet, setEditStreet] = useState(user.addresses[0]?.street || '');
@@ -214,52 +233,187 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </div>
         </div>
 
-        {/* Preferences & Night Mode */}
+        {/* Support & FAQ Section */}
         <div className="bg-white rounded-[22px] p-4 border border-stone-200/80 shadow-xs space-y-3">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B7A83]">
-            Preferências do App
-          </h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B7A83] flex items-center gap-1.5">
+              <Headphones className="w-3.5 h-3.5 text-[#00A896]" />
+              Central de Atendimento & Ajuda
+            </h4>
+            <span className="text-[10px] font-bold text-[#00A896] bg-[#E4F6F3] px-2 py-0.5 rounded-full">
+              24h Belém & Ananindeua
+            </span>
+          </div>
 
-          {/* Emergency Night Mode Switch */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200/60 text-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
-                <Moon className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="font-bold text-[#22333B]">Modo Emergência Noturno</p>
-                <p className="text-[11px] text-[#6B7A83]">Foco em farmácia, ração e produtos essenciais</p>
-              </div>
-            </div>
-
+          <div className="space-y-2">
+            {/* Card: FAQ */}
             <button
-              onClick={onToggleEmergencyMode}
-              className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
-                isEmergencyMode ? 'bg-[#FF9F1C]' : 'bg-stone-300'
-              }`}
+              onClick={() => setIsFaqOpen(true)}
+              className="w-full p-3.5 rounded-xl bg-stone-50 hover:bg-[#E4F6F3]/40 border border-stone-200/70 flex items-center justify-between text-left cursor-pointer transition-colors group"
             >
-              <div
-                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                  isEmergencyMode ? 'translate-x-6' : 'translate-x-0'
-                }`}
-              />
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#E4F6F3] text-[#00A896] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <HelpCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-xs sm:text-sm text-[#22333B]">
+                    Perguntas Frequentes (FAQ)
+                  </p>
+                  <p className="text-[11px] text-[#6B7A83]">
+                    Dúvidas sobre entregas 24h, iPet ID, SOS e assinaturas
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#00A896] transition-colors shrink-0" />
+            </button>
+
+            {/* Card: Support Chatbot with WhatsApp 91996156672 */}
+            <button
+              onClick={() => setIsSupportChatOpen(true)}
+              className="w-full p-3.5 rounded-xl bg-stone-50 hover:bg-[#E8F7F0]/40 border border-stone-200/70 flex items-center justify-between text-left cursor-pointer transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#E8F7F0] text-[#52B788] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <MessageCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-xs sm:text-sm text-[#22333B]">
+                      Suporte com Chatbot 24/7
+                    </p>
+                    <span className="text-[9px] font-bold text-white bg-[#52B788] px-1.5 py-0.2 rounded-full">
+                      Online
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#6B7A83]">
+                    Chat interativo com envio direto para WhatsApp (91) 99615-6672
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#52B788] transition-colors shrink-0" />
             </button>
           </div>
+        </div>
 
-          {/* Push notifications */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200/60 text-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#E4F6F3] text-[#00A896] flex items-center justify-center">
-                <Bell className="w-4 h-4" />
+        {/* Notifications & Preferences */}
+        <div className="bg-white rounded-[22px] p-4 border border-stone-200/80 shadow-xs space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B7A83] flex items-center gap-1.5">
+            <Bell className="w-3.5 h-3.5 text-[#00A896]" />
+            Notificações & Preferências
+          </h4>
+
+          <div className="space-y-2">
+            {/* Card: Notifications & FCM */}
+            <button
+              onClick={() => setIsNotificationsOpen(true)}
+              className="w-full p-3.5 rounded-xl bg-stone-50 hover:bg-[#E4F6F3]/40 border border-stone-200/70 flex items-center justify-between text-left cursor-pointer transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#E4F6F3] text-[#00A896] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-xs sm:text-sm text-[#22333B]">
+                      Notificações & Firebase (FCM)
+                    </p>
+                    <span className="text-[9px] font-bold text-[#00A896] bg-[#E4F6F3] px-1.5 py-0.2 rounded-full">
+                      Tempo Real
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#6B7A83]">
+                    Configurar permissão push, radar 3km e alertas de pedidos
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-[#22333B]">Notificações Push & SOS</p>
-                <p className="text-[11px] text-[#6B7A83]">Alertas no raio de 3km e rastreio de entrega</p>
+              <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#00A896] transition-colors shrink-0" />
+            </button>
+
+            {/* Emergency Night Mode Switch */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-stone-50 border border-stone-200/70 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                  <Moon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-xs sm:text-sm text-[#22333B]">Modo Emergência Noturno</p>
+                  <p className="text-[11px] text-[#6B7A83]">Foco em farmácia, ração e produtos essenciais (20h às 08h)</p>
+                </div>
               </div>
+
+              <button
+                onClick={onToggleEmergencyMode}
+                className={`w-12 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors shrink-0 ${
+                  isEmergencyMode ? 'bg-[#FF9F1C]' : 'bg-stone-300'
+                }`}
+              >
+                <div
+                  className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                    isEmergencyMode ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
             </div>
-            <span className="text-xs font-bold text-[#52B788]">Ativado</span>
           </div>
         </div>
+
+        {/* Legal & Compliance Section */}
+        <div className="bg-white rounded-[22px] p-4 border border-stone-200/80 shadow-xs space-y-3">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-[#6B7A83] flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#00A896]" />
+            Termos Legais & Privacidade
+          </h4>
+
+          <div className="space-y-2">
+            {/* Card: Terms of Use */}
+            <button
+              onClick={() => setIsTermsOpen(true)}
+              className="w-full p-3.5 rounded-xl bg-stone-50 hover:bg-stone-100/70 border border-stone-200/70 flex items-center justify-between text-left cursor-pointer transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-stone-200 text-stone-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-xs sm:text-sm text-[#22333B]">
+                    Termos de Uso da Plataforma
+                  </p>
+                  <p className="text-[11px] text-[#6B7A83]">
+                    Regras do Quick Commerce 24/7, iPet ID e radar comunitário
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-stone-700 transition-colors shrink-0" />
+            </button>
+
+            {/* Card: Privacy Policy (LGPD) */}
+            <button
+              onClick={() => setIsPrivacyOpen(true)}
+              className="w-full p-3.5 rounded-xl bg-stone-50 hover:bg-[#E8F7F0]/40 border border-stone-200/70 flex items-center justify-between text-left cursor-pointer transition-colors group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#E8F7F0] text-[#52B788] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold text-xs sm:text-sm text-[#22333B]">
+                      Política de Privacidade & LGPD
+                    </p>
+                    <span className="text-[9px] font-bold text-[#52B788] bg-[#E8F7F0] px-1.5 py-0.2 rounded-full">
+                      Criptografia AES-256
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#6B7A83]">
+                    Proteção de dados, sigilo de prontuários e uso estrito do GPS
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-stone-400 group-hover:text-[#52B788] transition-colors shrink-0" />
+            </button>
+          </div>
+        </div>
+
 
         {/* Actions */}
         <div className="space-y-2 pt-2">
@@ -431,6 +585,64 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </div>
         )}
       </AnimatePresence>
+
+      {/* ================= MODAL: FAQ ================= */}
+      <AnimatePresence>
+        {isFaqOpen && (
+          <FaqModal
+            isOpen={isFaqOpen}
+            onClose={() => setIsFaqOpen(false)}
+            onOpenSupport={() => {
+              setIsFaqOpen(false);
+              setIsSupportChatOpen(true);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ================= MODAL: SUPPORT CHATBOT (WHATSAPP 91996156672) ================= */}
+      <AnimatePresence>
+        {isSupportChatOpen && (
+          <SupportChatModal
+            isOpen={isSupportChatOpen}
+            onClose={() => setIsSupportChatOpen(false)}
+            user={user}
+            activePet={activePet}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ================= MODAL: NOTIFICATIONS & FIREBASE (FCM) ================= */}
+      <AnimatePresence>
+        {isNotificationsOpen && (
+          <NotificationsModal
+            isOpen={isNotificationsOpen}
+            onClose={() => setIsNotificationsOpen(false)}
+            onShowToast={onShowToast}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ================= MODAL: TERMS OF USE ================= */}
+      <AnimatePresence>
+        {isTermsOpen && (
+          <TermsModal
+            isOpen={isTermsOpen}
+            onClose={() => setIsTermsOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ================= MODAL: PRIVACY POLICY (LGPD) ================= */}
+      <AnimatePresence>
+        {isPrivacyOpen && (
+          <PrivacyModal
+            isOpen={isPrivacyOpen}
+            onClose={() => setIsPrivacyOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
+

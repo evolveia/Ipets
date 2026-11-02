@@ -35,7 +35,14 @@ import { SubscriptionsScreen } from './features/subscriptions/SubscriptionsScree
 import { ProfileScreen } from './features/profile/ProfileScreen';
 import { CartDrawer } from './features/cart-checkout/CartDrawer';
 import { PWAInstallBanner } from './components/ui/PWAInstallBanner';
-import { CheckCircle2, Sparkles, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Sparkles, AlertCircle, Bell, X } from 'lucide-react';
+import {
+  getPushPermissionStatus,
+  requestPushPermission,
+  sendOrderStatusPush,
+  sendSosAlertPush,
+  PushPermissionStatus,
+} from './services/firebase/push';
 
 export default function App() {
   // App navigation view state: preloader -> landing -> auth -> app
@@ -58,12 +65,31 @@ export default function App() {
   const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Push notification state (Firebase Cloud Messaging)
+  const [pushPermission, setPushPermission] = useState<PushPermissionStatus>('default');
+  const [hasDismissedPushPrompt, setHasDismissedPushPrompt] = useState(false);
+
+  React.useEffect(() => {
+    setPushPermission(getPushPermissionStatus());
+  }, []);
+
+  const handleEnablePushInAppShell = async () => {
+    const result = await requestPushPermission();
+    setPushPermission(result.status);
+    if (result.status === 'granted') {
+      showToast('🔔 Notificações em tempo real (FCM) ativadas!');
+    } else if (result.status === 'denied') {
+      showToast('⚠️ Permissão de notificações negada no navegador.');
+    }
+  };
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
     }, 3200);
   };
+
 
   // Garante que todo carregamento de página e troca de aba inicie pelo topo
   React.useEffect(() => {
@@ -140,13 +166,20 @@ export default function App() {
     setCartItems([]);
     setCurrentTab('orders');
     showToast('🎉 Pedido confirmado com entrega expressa!');
+
+    // Trigger Firebase Cloud Messaging / Web Push notification
+    sendOrderStatusPush(newOrder.id, 'Separado no micro-hub mais próximo', 24);
   };
 
   // SOS operations
   const handleAddSosAlert = (alert: SosAlert) => {
     setSosAlerts((prev) => [alert, ...prev]);
     showToast(`🚨 Alerta emitido! Radar ativo no raio de ${alert.radiusKm} km.`);
+
+    // Trigger community SOS push notification in 3km perimeter
+    sendSosAlertPush(alert.petName, alert.lastSeenAddress, alert.radiusKm);
   };
+
 
   const handleAddSighting = (alertId: string, sighting: SosSighting) => {
     setSosAlerts((prev) =>
@@ -301,6 +334,41 @@ export default function App() {
 
       {viewState === 'app' && (
         <div className="relative pb-16">
+          {/* AppShell Push Notification Permission Prompt (FCM) */}
+          {pushPermission === 'default' && !hasDismissedPushPrompt && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-gradient-to-r from-[#00A896] to-[#027368] text-white px-3.5 sm:px-4 py-2.5 shadow-md flex items-center justify-between gap-3 text-xs sticky top-0 z-40"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <Bell className="w-4 h-4 text-amber-300 animate-bounce" />
+                </div>
+                <p className="truncate text-[11px] sm:text-xs">
+                  <strong>Ativar alertas em tempo real?</strong> Receba rotas de entrega e alertas SOS de 3km.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={handleEnablePushInAppShell}
+                  className="px-3 py-1 rounded-lg bg-white text-[#00A896] font-bold text-xs hover:bg-stone-100 cursor-pointer transition-colors shadow-2xs"
+                >
+                  Ativar
+                </button>
+                <button
+                  onClick={() => setHasDismissedPushPrompt(true)}
+                  className="text-white/80 hover:text-white p-1 cursor-pointer transition-colors"
+                  title="Dispensar"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+
           {/* PWA Install Banner (only appears in browser when not yet standalone) */}
           <PWAInstallBanner />
 
@@ -411,6 +479,7 @@ export default function App() {
                     onGoToLanding={() => setViewState('landing')}
                     onSignOut={() => setViewState('auth')}
                     onUpdateUser={handleUpdateUserProfile}
+                    onShowToast={showToast}
                   />
                 </div>
               </motion.div>
