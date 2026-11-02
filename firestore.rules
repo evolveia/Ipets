@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Funções auxiliares de autenticação e validação
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && request.auth.token.role == role;
+    }
+
+    // Coleção users: tutor lê e edita seu próprio perfil; parceiros e admins leem perfil público
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId);
+      allow delete: if hasRole('admin');
+    }
+
+    // Coleção pets: tutor lê e edita seus próprios pets; veterinários autenticados podem ler via QR Code
+    match /pets/{petId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.ownerId == request.auth.uid;
+
+      // Subcoleção de registros de saúde do pet
+      match /health_records/{recordId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated() && get(/databases/$(database)/documents/pets/$(petId)).data.ownerId == request.auth.uid;
+      }
+    }
+
+    // Coleção products: leitura pública para catálogo; gravação restrita a parceiros e admins
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if hasRole('admin') || hasRole('partner');
+    }
+
+    // Coleção hubs: leitura pública para verificar locais de entrega e micro-hubs 24/7
+    match /hubs/{hubId} {
+      allow read: if true;
+      allow write: if hasRole('admin');
+
+      match /inventory/{invId} {
+        allow read: if true;
+        allow write: if hasRole('admin') || (hasRole('partner') && request.auth.token.hubId == hubId);
+      }
+    }
+
+    // Coleção orders: tutor cria e lê apenas seus pedidos; entregadores e parceiros do hub acessam pedidos ativos
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        hasRole('courier') || 
+        hasRole('admin') || 
+        (hasRole('partner') && resource.data.hubId == request.auth.token.hubId)
+      );
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid || 
+        hasRole('courier') || 
+        hasRole('admin')
+      );
+
+      match /events/{eventId} {
+        allow read: if isAuthenticated();
+        allow write: if hasRole('courier') || hasRole('partner') || hasRole('admin');
+      }
+    }
+
+    // Coleção sos_alerts: leitura permitida para rede comunitária de busca (autenticada)
+    match /sos_alerts/{alertId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || hasRole('admin'));
+      allow delete: if isAuthenticated() && (resource.data.ownerId == request.auth.uid || hasRole('admin'));
+
+      // Avistamentos comunitários enviados por vizinhos
+      match /sightings/{sightingId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && request.resource.data.reporterId == request.auth.uid;
+        allow update, delete: if isAuthenticated() && (resource.data.reporterId == request.auth.uid || hasRole('admin'));
+      }
+    }
+
+    // Assinaturas iPet Prime e iPet Protect
+    match /subscriptions/{subId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create, update: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || hasRole('admin'));
+    }
+
+    // Notificações in-app
+    match /notifications/{notifId} {
+      allow read, update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if hasRole('admin') || hasRole('system');
+    }
+  }
+}

@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Baloo 2", cursive, sans-serif;
+  --font-sans: "Nunito Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-brand-primary: #00A896;
+  --color-brand-primary-hover: #027368;
+  --color-brand-primary-soft: #E4F6F3;
+  --color-brand-accent: #FF9F1C;
+  --color-brand-accent-hover: #F08B07;
+  --color-brand-accent-soft: #FFF3E0;
+  --color-brand-bg: #FDF8F3;
+  --color-brand-surface: #FFFFFF;
+  --color-brand-ink: #22333B;
+  --color-brand-muted: #6B7A83;
+  --color-brand-coral: #E63946;
+  --color-brand-coral-soft: #FDE8E9;
+  --color-brand-success: #52B788;
+  --color-brand-success-soft: #E8F7F0;
+  --color-brand-warning: #F4A261;
+
+  --radius-card: 20px;
+  --radius-btn: 14px;
+}
+
+:root {
+  font-family: "Nunito Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #22333B;
+  background-color: #FDF8F3;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: "Baloo 2", cursive, sans-serif;
+}
+
+code, .font-mono {
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* Custom smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 168, 150, 0.2);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 168, 150, 0.4);
+}
+
+/* Radar pulse animation for SOS mode */
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+.animate-radar {
+  animation: radar-pulse 2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+/* Shimmer animation */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer-mask {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-mask::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.3) 20%,
+    rgba(255, 255, 255, 0.6) 60%,
+    rgba(255, 255, 255, 0)
+  );
+  animation: shimmer 1.8s infinite;
+  content: '';
+}

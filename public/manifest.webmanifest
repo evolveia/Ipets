@@ -1,0 +1,28 @@
+{
+  "name": "iPet — Super App Pet 24/7",
+  "short_name": "iPet",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FDF8F3",
+  "theme_color": "#00A896",
+  "description": "Super App Pet 24/7: Quick commerce, passaporte digital e rede comunitária de proteção animal.",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/brand/ipet-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/ipet-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/brand/ipet-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

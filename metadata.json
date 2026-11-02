@@ -1,0 +1,6 @@
+{
+  "name": "iPet — Super App Pet 24/7",
+  "description": "Super App completo para tutores de pets: Quick Commerce 24/7 com Top 100 SKUs, iPet ID (passaporte digital), rede comunitária iPet SOS e planos de proteção.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
