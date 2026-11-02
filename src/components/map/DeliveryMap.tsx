@@ -84,6 +84,9 @@ export const DeliveryMap: React.FC<DeliveryMapProps> = ({
 
       polylineRef.current = poly;
 
+      // Fit bounds so entire route is immediately visible with comfortable margin
+      map.fitBounds(poly.getBounds(), { padding: [40, 40] });
+
       // 1. Origin Marker
       const hubLabel = activeZone === 'belem' ? 'Hub Belém Doca 24h' : 'Hub Ananindeua BR-316';
       const hubIcon = L.divIcon({
@@ -99,7 +102,7 @@ export const DeliveryMap: React.FC<DeliveryMapProps> = ({
 
       L.marker(currentRoute[0], { icon: hubIcon })
         .addTo(map)
-        .bindPopup(`<b>${hubLabel}</b><br>Separação Rápida iPet`);
+        .bindPopup(`<b>${hubLabel}</b><br>Separação Rápida iPet 24/7`);
 
       // 2. Destination Marker
       const destLabel = activeZone === 'belem' ? destinationAddress : 'Cidade Nova / Coqueiro, Ananindeua - PA';
@@ -138,11 +141,27 @@ export const DeliveryMap: React.FC<DeliveryMapProps> = ({
         .bindPopup(`<b>${courierName}</b><br>Entregador Oficial iPet Express`);
 
       courierMarkerRef.current = courierMarker;
+
+      // Invalidate size on load
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
     } catch (err) {
       console.error('Error initializing Leaflet delivery map:', err);
     }
 
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
+      resizeObserver.disconnect();
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -173,8 +192,17 @@ export const DeliveryMap: React.FC<DeliveryMapProps> = ({
     }
   };
 
+  const handleFitRoute = () => {
+    if (mapInstanceRef.current && polylineRef.current) {
+      mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), {
+        padding: [40, 40],
+        animate: true,
+      });
+    }
+  };
+
   return (
-    <div className="relative w-full h-[280px] sm:h-[320px] rounded-[24px] overflow-hidden shadow-lg border border-stone-200 bg-stone-100">
+    <div className="relative w-full h-[290px] sm:h-[330px] rounded-[24px] overflow-hidden shadow-lg border border-stone-200 bg-stone-100">
       {/* Map canvas container */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
@@ -204,15 +232,25 @@ export const DeliveryMap: React.FC<DeliveryMapProps> = ({
         <span className="text-stone-300">• {activeZone === 'belem' ? '1.4 km' : '2.1 km'}</span>
       </div>
 
-      {/* Center on Courier Button (Bottom Left) */}
-      <button
-        onClick={handleCenterCourier}
-        className="absolute bottom-3 left-3 z-10 bg-white hover:bg-stone-50 text-[#00A896] p-2.5 rounded-xl shadow-md border border-stone-200 cursor-pointer flex items-center gap-1.5 text-xs font-bold transition-transform active:scale-95"
-        title="Focar no entregador"
-      >
-        <Navigation className="w-4 h-4 text-[#FF9F1C]" />
-        <span className="hidden sm:inline">Focar no Entregador</span>
-      </button>
+      {/* Actions (Bottom Left): Center Courier & Fit Route */}
+      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2">
+        <button
+          onClick={handleCenterCourier}
+          className="bg-white hover:bg-stone-50 text-[#00A896] p-2.5 rounded-xl shadow-md border border-stone-200 cursor-pointer flex items-center gap-1.5 text-xs font-bold transition-transform active:scale-95"
+          title="Focar no entregador"
+        >
+          <Navigation className="w-4 h-4 text-[#FF9F1C]" />
+          <span className="hidden sm:inline">Entregador</span>
+        </button>
+        <button
+          onClick={handleFitRoute}
+          className="bg-white hover:bg-stone-50 text-[#22333B] p-2.5 rounded-xl shadow-md border border-stone-200 cursor-pointer flex items-center gap-1.5 text-xs font-bold transition-transform active:scale-95"
+          title="Ver rota inteira"
+        >
+          <Compass className="w-4 h-4 text-[#00A896]" />
+          <span className="hidden sm:inline">Ver Rota</span>
+        </button>
+      </div>
 
       {/* Floating Courier Contact Card (Bottom Center / Right) */}
       <div className="absolute bottom-3 right-3 z-10 bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-lg border border-stone-200/80 flex items-center gap-2.5 max-w-[240px]">
@@ -247,3 +285,4 @@ export const DeliveryMap: React.FC<DeliveryMapProps> = ({
     </div>
   );
 };
+

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { SosAlert } from '../../types';
-import { Radio, MapPin, AlertTriangle, Crosshair, ZoomIn, ZoomOut, Phone } from 'lucide-react';
+import { Radio, MapPin, AlertTriangle, Crosshair, ZoomIn, ZoomOut, Phone, ShieldCheck, Navigation } from 'lucide-react';
 
 interface SosMapProps {
   alerts: SosAlert[];
@@ -22,10 +22,16 @@ export const SosMap: React.FC<SosMapProps> = ({
   const markersRef = useRef<L.Marker[]>([]);
   const [activeRegion, setActiveRegion] = useState<'both' | 'belem' | 'ananindeua'>('both');
 
-  // Coordinates
+  // Key Coordinates
   const BELEM_COORDS: [number, number] = [-1.4525, -48.4800];
   const ANANINDEUA_COORDS: [number, number] = [-1.3650, -48.3750];
   const METRO_CENTER: [number, number] = [-1.4100, -48.4300];
+
+  // Metropolitan bounds encompassing Belém and Ananindeua
+  const METRO_BOUNDS: [[number, number], [number, number]] = [
+    [-1.4850, -48.5150], // Sudoeste Belém / Baía do Guajará
+    [-1.3400, -48.3500], // Nordeste Ananindeua / BR-316
+  ];
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -45,7 +51,10 @@ export const SosMap: React.FC<SosMapProps> = ({
 
       mapInstanceRef.current = map;
 
-      // Modern tile layer
+      // Fit bounds to show both Belém and Ananindeua by default
+      map.fitBounds(METRO_BOUNDS, { padding: [25, 25] });
+
+      // Open source HD Voyager tile layer (no proprietary API key needed)
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
         maxZoom: 19,
         subdomains: 'abcd',
@@ -58,15 +67,15 @@ export const SosMap: React.FC<SosMapProps> = ({
       const userIcon = L.divIcon({
         className: 'custom-user-pin',
         html: `
-          <div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
+          <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
             <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background-color: #00A896; opacity: 0.4; animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-            <div style="background-color: #00A896; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 2.5px solid white; box-shadow: 0 4px 10px rgba(0,168,150,0.4); z-index: 10; position: relative;">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+            <div style="background-color: #00A896; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; border: 2.5px solid white; box-shadow: 0 4px 12px rgba(0,168,150,0.5); z-index: 10; position: relative;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
             </div>
           </div>
         `,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
       });
 
       L.marker(userPosition, { icon: userIcon })
@@ -87,11 +96,28 @@ export const SosMap: React.FC<SosMapProps> = ({
 
       // 3. Render Dynamic Alert Markers
       renderAlertMarkers(map, alerts);
+
+      // Force resize invalidation after DOM paint
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
     } catch (err) {
       console.error('Error initializing Leaflet SOS map:', err);
     }
 
+    // ResizeObserver to handle tab changes or responsive layout shifts
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current);
+    }
+
     return () => {
+      resizeObserver.disconnect();
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -119,7 +145,7 @@ export const SosMap: React.FC<SosMapProps> = ({
     markersRef.current = [];
 
     currentAlerts.forEach((alert, index) => {
-      // Dynamic fallback coordinates in Belém or Ananindeua if not provided
+      // Dynamic coordinates in Belém or Ananindeua
       const lat =
         alert.latitude ||
         (index % 2 === 0 ? -1.4550 - index * 0.008 : -1.3680 + index * 0.006);
@@ -132,8 +158,8 @@ export const SosMap: React.FC<SosMapProps> = ({
         html: `
           <div style="position: relative; width: 44px; height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
             <div style="position: absolute; width: 100%; height: 100%; border-radius: 50%; background-color: #E63946; opacity: 0.45; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-            <img src="${alert.photoUrl}" alt="${alert.petName}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2.5px solid #E63946; box-shadow: 0 4px 12px rgba(230,57,70,0.5); z-index: 10; position: relative;" />
-            <span style="position: absolute; bottom: -8px; background: #E63946; color: white; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 6px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.25); z-index: 12;">
+            <img src="${alert.photoUrl}" alt="${alert.petName}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2.5px solid #E63946; box-shadow: 0 4px 12px rgba(230,57,70,0.5); z-index: 10; position: relative;" />
+            <span style="position: absolute; bottom: -8px; background: #E63946; color: white; font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 6px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.25); z-index: 12;">
               ${alert.petName}
             </span>
           </div>
@@ -145,18 +171,19 @@ export const SosMap: React.FC<SosMapProps> = ({
       const marker = L.marker([lat, lng], { icon: alertIcon }).addTo(map);
 
       const popupContent = `
-        <div style="font-family: inherit; width: 190px; text-align: left;">
+        <div style="font-family: inherit; width: 210px; text-align: left; padding: 2px;">
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-            <img src="${alert.photoUrl}" style="width: 38px; height: 38px; border-radius: 8px; object-fit: cover; border: 1px solid #ddd;" />
+            <img src="${alert.photoUrl}" style="width: 42px; height: 42px; border-radius: 10px; object-fit: cover; border: 1.5px solid #E63946;" />
             <div>
-              <b style="color: #22333B; font-size: 13px; display: block;">${alert.petName}</b>
-              <span style="font-size: 10px; color: #6B7A83;">${alert.breed}</span>
+              <b style="color: #22333B; font-size: 14px; display: block; line-height: 1.2;">${alert.petName}</b>
+              <span style="font-size: 11px; color: #6B7A83;">${alert.breed}</span>
             </div>
           </div>
-          <p style="font-size: 11px; color: #444; margin: 4px 0;">📍 <b>Local:</b> ${alert.lastSeenAddress}</p>
-          ${alert.rewardAmount ? `<span style="display: inline-block; background: #FFF3E0; color: #FF9F1C; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 6px; margin-bottom: 6px;">Recompensa: R$ ${alert.rewardAmount}</span>` : ''}
-          <div style="margin-top: 6px; border-top: 1px solid #eee; padding-top: 6px; display: flex; gap: 4px;">
-            <a href="tel:${alert.contactPhone.replace(/\D/g, '')}" style="flex: 1; background: #00A896; color: white; text-decoration: none; font-size: 10px; font-weight: bold; padding: 4px 6px; border-radius: 6px; text-align: center;">Ligar Tutor</a>
+          <p style="font-size: 11px; color: #444; margin: 4px 0;">📍 <b>Último Visto:</b> ${alert.lastSeenAddress}</p>
+          ${alert.rewardAmount ? `<span style="display: inline-block; background: #FFF3E0; color: #D97706; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px; margin: 4px 0;">Recompensa: R$ ${alert.rewardAmount}</span>` : ''}
+          <div style="margin-top: 8px; border-top: 1px solid #eee; padding-top: 6px; display: flex; gap: 6px;">
+            <a href="tel:${alert.contactPhone.replace(/\D/g, '')}" style="flex: 1; background: #00A896; color: white; text-decoration: none; font-size: 11px; font-weight: bold; padding: 5px 8px; border-radius: 8px; text-align: center;">Ligar Tutor</a>
+            <a href="https://wa.me/55${alert.contactPhone.replace(/\D/g, '')}" target="_blank" style="flex: 1; background: #52B788; color: white; text-decoration: none; font-size: 11px; font-weight: bold; padding: 5px 8px; border-radius: 8px; text-align: center;">WhatsApp</a>
           </div>
         </div>
       `;
@@ -176,16 +203,16 @@ export const SosMap: React.FC<SosMapProps> = ({
     if (!mapInstanceRef.current) return;
 
     if (region === 'both') {
-      mapInstanceRef.current.flyTo(METRO_CENTER, 12, { animate: true, duration: 1 });
+      mapInstanceRef.current.fitBounds(METRO_BOUNDS, { padding: [25, 25], animate: true });
     } else if (region === 'belem') {
-      mapInstanceRef.current.flyTo(BELEM_COORDS, 14, { animate: true, duration: 1 });
+      mapInstanceRef.current.flyTo(BELEM_COORDS, 14, { animate: true, duration: 0.8 });
     } else if (region === 'ananindeua') {
-      mapInstanceRef.current.flyTo(ANANINDEUA_COORDS, 14, { animate: true, duration: 1 });
+      mapInstanceRef.current.flyTo(ANANINDEUA_COORDS, 14, { animate: true, duration: 0.8 });
     }
   };
 
   return (
-    <div className="relative w-full h-[280px] sm:h-[320px] rounded-[24px] overflow-hidden shadow-lg border border-stone-200 bg-stone-900">
+    <div className="relative w-full h-[290px] sm:h-[330px] rounded-[24px] overflow-hidden shadow-lg border border-stone-200 bg-stone-900">
       {/* Map canvas */}
       <div ref={mapContainerRef} className="w-full h-full z-0" />
 
@@ -193,16 +220,16 @@ export const SosMap: React.FC<SosMapProps> = ({
       <div className="absolute top-3 left-3 z-10 bg-white/95 backdrop-blur-md p-1 rounded-xl shadow-md border border-stone-200/80 flex items-center gap-1 text-[11px] font-bold text-[#22333B]">
         <button
           onClick={() => goToRegion('both')}
-          className={`px-2 py-1 rounded-lg transition-colors cursor-pointer ${
-            activeRegion === 'both' ? 'bg-[#00A896] text-white' : 'text-stone-600 hover:text-black'
+          className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
+            activeRegion === 'both' ? 'bg-[#00A896] text-white shadow-2xs' : 'text-stone-600 hover:text-black'
           }`}
         >
-          Metropolitano
+          Belém + Ananindeua
         </button>
         <button
           onClick={() => goToRegion('belem')}
           className={`px-2 py-1 rounded-lg transition-colors cursor-pointer ${
-            activeRegion === 'belem' ? 'bg-[#00A896] text-white' : 'text-stone-600 hover:text-black'
+            activeRegion === 'belem' ? 'bg-[#00A896] text-white shadow-2xs' : 'text-stone-600 hover:text-black'
           }`}
         >
           Belém
@@ -210,7 +237,7 @@ export const SosMap: React.FC<SosMapProps> = ({
         <button
           onClick={() => goToRegion('ananindeua')}
           className={`px-2 py-1 rounded-lg transition-colors cursor-pointer ${
-            activeRegion === 'ananindeua' ? 'bg-[#00A896] text-white' : 'text-stone-600 hover:text-black'
+            activeRegion === 'ananindeua' ? 'bg-[#00A896] text-white shadow-2xs' : 'text-stone-600 hover:text-black'
           }`}
         >
           Ananindeua
@@ -233,11 +260,12 @@ export const SosMap: React.FC<SosMapProps> = ({
         <span className="hidden sm:inline">Minha Localização</span>
       </button>
 
-      {/* Bottom Alert Count Badge */}
-      <div className="absolute bottom-3 right-12 z-10 bg-black/75 backdrop-blur-md text-white px-3 py-1.5 rounded-xl shadow-md border border-white/10 text-[11px] font-bold flex items-center gap-1.5">
-        <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
-        <span>{alerts.length} alertas monitorados</span>
+      {/* Leaflet GPS Active Badge (No API Key Required) */}
+      <div className="absolute bottom-3 right-12 z-10 bg-black/80 backdrop-blur-md text-white px-3 py-1.5 rounded-xl shadow-md border border-white/10 text-[11px] font-bold flex items-center gap-1.5">
+        <span className="w-2 h-2 rounded-full bg-[#52B788] animate-pulse" />
+        <span>GPS Comunitário Ativo ({alerts.length} alertas)</span>
       </div>
     </div>
   );
 };
+

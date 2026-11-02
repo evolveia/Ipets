@@ -34,6 +34,7 @@ import { PetsScreen } from './features/pets/PetsScreen';
 import { SubscriptionsScreen } from './features/subscriptions/SubscriptionsScreen';
 import { ProfileScreen } from './features/profile/ProfileScreen';
 import { CartDrawer } from './features/cart-checkout/CartDrawer';
+import { PWAInstallBanner } from './components/ui/PWAInstallBanner';
 import { CheckCircle2, Sparkles, AlertCircle } from 'lucide-react';
 
 export default function App() {
@@ -300,6 +301,9 @@ export default function App() {
 
       {viewState === 'app' && (
         <div className="relative pb-16">
+          {/* PWA Install Banner (only appears in browser when not yet standalone) */}
+          <PWAInstallBanner />
+
           {/* Active Tab Screen */}
           <AnimatePresence mode="wait">
             {currentTab === 'home' && (

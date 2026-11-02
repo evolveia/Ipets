@@ -1,28 +1,57 @@
 {
+  "id": "/",
   "name": "iPet — Super App Pet 24/7",
   "short_name": "iPet",
+  "description": "Super App Pet 24/7 com Quick Commerce dos Top 100 SKUs de bairro, passaporte digital iPet ID e rede comunitária SOS geolocalizada em Belém e Ananindeua.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#FDF8F3",
   "theme_color": "#00A896",
-  "description": "Super App Pet 24/7: Quick commerce, passaporte digital e rede comunitária de proteção animal.",
-  "orientation": "portrait-primary",
+  "lang": "pt-BR",
+  "categories": ["shopping", "lifestyle", "utilities"],
   "icons": [
     {
       "src": "/brand/ipet-logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/brand/ipet-logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/brand/ipet-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Commerce 24/7",
+      "short_name": "Entregas",
+      "description": "Pedir rações e farmácia com entrega em até 25 minutos",
+      "url": "/?tab=home",
+      "icons": [{ "src": "/brand/ipet-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "iPet ID Passaporte",
+      "short_name": "iPet ID",
+      "description": "Ver carteirinha de vacinação e QR Code oficial",
+      "url": "/?tab=pets",
+      "icons": [{ "src": "/brand/ipet-logo.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Radar Comunitário SOS",
+      "short_name": "SOS Pet",
+      "description": "Alertar pet desaparecido ou ver avistamentos",
+      "url": "/?tab=sos",
+      "icons": [{ "src": "/brand/ipet-logo.png", "sizes": "192x192" }]
     }
   ]
 }
