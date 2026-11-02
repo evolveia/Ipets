@@ -282,16 +282,18 @@ export default function App() {
       {viewState === 'landing' && (
         <LandingPage
           onGoToAuth={() => {
-            setViewState('app');
-            setCurrentTab('home');
-            showToast('Bem-vindo(a) de volta! 🐾');
+            setViewState('auth');
           }}
         />
       )}
 
       {viewState === 'auth' && (
         <AuthScreen
-          onSuccess={() => setViewState('app')}
+          onSuccess={() => {
+            setViewState('app');
+            setCurrentTab('home');
+            showToast('Bem-vindo(a) ao iPet! 🐾');
+          }}
           onBackToLanding={() => setViewState('landing')}
         />
       )}
